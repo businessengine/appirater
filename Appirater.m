@@ -392,93 +392,99 @@ static BOOL _alwaysUseMainBundle = NO;
 }
 
 - (void)incrementUseCount {
-  // get the app's version
-  NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey];
+  @synchronized(self) {
+    // get the app's version
+    NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey];
 
-  // get the version number that we've been tracking
-  GULUserDefaults *userDefaults = [GULUserDefaults standardUserDefaults];
-  NSString *trackingVersion = [userDefaults stringForKey:kAppiraterCurrentVersion];
-  if (trackingVersion == nil) {
-    trackingVersion = version;
-    [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
-  }
-
-  if (_debug)
-    NSLog(@"APPIRATER Tracking version: %@", trackingVersion);
-
-  if ([trackingVersion isEqualToString:version]) {
-    // check if the first use date has been set. if not, set it.
-    NSTimeInterval timeInterval = [userDefaults doubleForKey:kAppiraterFirstUseDate];
-    if (timeInterval == 0) {
-      timeInterval = [[NSDate date] timeIntervalSince1970];
-      [userDefaults setDouble:timeInterval forKey:kAppiraterFirstUseDate];
+    // get the version number that we've been tracking
+    GULUserDefaults *userDefaults = [GULUserDefaults standardUserDefaults];
+    NSString *trackingVersion = [userDefaults stringForKey:kAppiraterCurrentVersion];
+    if (trackingVersion == nil) {
+      trackingVersion = version;
+      [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
     }
 
-    // increment the use count
-    NSInteger useCount = [userDefaults integerForKey:kAppiraterUseCount];
-    useCount++;
-    [userDefaults setInteger:useCount forKey:kAppiraterUseCount];
     if (_debug)
-      NSLog(@"APPIRATER Use count: %@", @(useCount));
-  } else {
-    // it's a new version of the app, so restart tracking
-    [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
-    [userDefaults setDouble:[[NSDate date] timeIntervalSince1970] forKey:kAppiraterFirstUseDate];
-    [userDefaults setInteger:1 forKey:kAppiraterUseCount];
-    [userDefaults setInteger:0 forKey:kAppiraterSignificantEventCount];
-    [userDefaults setBool:NO forKey:kAppiraterRatedCurrentVersion];
-    [userDefaults setBool:NO forKey:kAppiraterDeclinedToRate];
-    [userDefaults setDouble:0 forKey:kAppiraterReminderRequestDate];
-  }
+      NSLog(@"APPIRATER Tracking version: %@", trackingVersion);
 
-  [userDefaults synchronize];
+    if ([trackingVersion isEqualToString:version]) {
+      // check if the first use date has been set. if not, set it.
+      NSTimeInterval timeInterval = [userDefaults doubleForKey:kAppiraterFirstUseDate];
+      if (timeInterval == 0) {
+        timeInterval = [[NSDate date] timeIntervalSince1970];
+        [userDefaults setDouble:timeInterval forKey:kAppiraterFirstUseDate];
+      }
+
+      // increment the use count
+      NSInteger useCount = [userDefaults integerForKey:kAppiraterUseCount];
+      useCount++;
+      [userDefaults setInteger:useCount forKey:kAppiraterUseCount];
+      if (_debug)
+        NSLog(@"APPIRATER Use count: %@", @(useCount));
+    } else {
+      // it's a new version of the app, so restart tracking
+      [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
+      [userDefaults setDouble:[[NSDate date] timeIntervalSince1970] forKey:kAppiraterFirstUseDate];
+      [userDefaults setInteger:1 forKey:kAppiraterUseCount];
+      [userDefaults setInteger:0 forKey:kAppiraterSignificantEventCount];
+      [userDefaults setBool:NO forKey:kAppiraterRatedCurrentVersion];
+      [userDefaults setBool:NO forKey:kAppiraterDeclinedToRate];
+      [userDefaults setDouble:0 forKey:kAppiraterReminderRequestDate];
+    }
+
+    [userDefaults synchronize];
+  } //@synchronized
 }
 
 - (void)incrementSignificantEventCount {
-  // get the app's version
-  NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey];
+  @synchronized(self) {
+    // get the app's version
+    NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey];
 
-  // get the version number that we've been tracking
-  GULUserDefaults *userDefaults = [GULUserDefaults standardUserDefaults];
-  NSString *trackingVersion = [userDefaults stringForKey:kAppiraterCurrentVersion];
-  if (trackingVersion == nil) {
-    trackingVersion = version;
-    [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
-  }
-
-  if (_debug)
-    NSLog(@"APPIRATER Tracking version: %@", trackingVersion);
-
-  if ([trackingVersion isEqualToString:version]) {
-    // check if the first use date has been set. if not, set it.
-    NSTimeInterval timeInterval = [userDefaults doubleForKey:kAppiraterFirstUseDate];
-    if (timeInterval == 0) {
-      timeInterval = [[NSDate date] timeIntervalSince1970];
-      [userDefaults setDouble:timeInterval forKey:kAppiraterFirstUseDate];
+    // get the version number that we've been tracking
+    GULUserDefaults *userDefaults = [GULUserDefaults standardUserDefaults];
+    NSString *trackingVersion = [userDefaults stringForKey:kAppiraterCurrentVersion];
+    if (trackingVersion == nil) {
+      trackingVersion = version;
+      [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
     }
 
-    // increment the significant event count
-    NSInteger sigEventCount = [userDefaults integerForKey:kAppiraterSignificantEventCount];
-    sigEventCount++;
-    [userDefaults setInteger:sigEventCount forKey:kAppiraterSignificantEventCount];
     if (_debug)
-      NSLog(@"APPIRATER Significant event count: %@", @(sigEventCount));
-  } else {
-    // it's a new version of the app, so restart tracking
-    [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
-    [userDefaults setDouble:0 forKey:kAppiraterFirstUseDate];
-    [userDefaults setInteger:0 forKey:kAppiraterUseCount];
-    [userDefaults setInteger:1 forKey:kAppiraterSignificantEventCount];
-    [userDefaults setBool:NO forKey:kAppiraterRatedCurrentVersion];
-    [userDefaults setBool:NO forKey:kAppiraterDeclinedToRate];
-    [userDefaults setDouble:0 forKey:kAppiraterReminderRequestDate];
-  }
+      NSLog(@"APPIRATER Tracking version: %@", trackingVersion);
 
-  [userDefaults synchronize];
+    if ([trackingVersion isEqualToString:version]) {
+      // check if the first use date has been set. if not, set it.
+      NSTimeInterval timeInterval = [userDefaults doubleForKey:kAppiraterFirstUseDate];
+      if (timeInterval == 0) {
+        timeInterval = [[NSDate date] timeIntervalSince1970];
+        [userDefaults setDouble:timeInterval forKey:kAppiraterFirstUseDate];
+      }
+
+      // increment the significant event count
+      NSInteger sigEventCount = [userDefaults integerForKey:kAppiraterSignificantEventCount];
+      sigEventCount++;
+      [userDefaults setInteger:sigEventCount forKey:kAppiraterSignificantEventCount];
+      if (_debug)
+        NSLog(@"APPIRATER Significant event count: %@", @(sigEventCount));
+    } else {
+      // it's a new version of the app, so restart tracking
+      [userDefaults setObject:version forKey:kAppiraterCurrentVersion];
+      [userDefaults setDouble:0 forKey:kAppiraterFirstUseDate];
+      [userDefaults setInteger:0 forKey:kAppiraterUseCount];
+      [userDefaults setInteger:1 forKey:kAppiraterSignificantEventCount];
+      [userDefaults setBool:NO forKey:kAppiraterRatedCurrentVersion];
+      [userDefaults setBool:NO forKey:kAppiraterDeclinedToRate];
+      [userDefaults setDouble:0 forKey:kAppiraterReminderRequestDate];
+    }
+
+    [userDefaults synchronize];
+  }
 }
 
 - (void)incrementAndRate:(BOOL)canPromptForRating {
-  [self incrementUseCount];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self incrementUseCount];
+  });
 
   if (canPromptForRating &&
       [self ratingConditionsHaveBeenMet] &&
@@ -491,8 +497,10 @@ static BOOL _alwaysUseMainBundle = NO;
 }
 
 - (void)incrementSignificantEventAndRate:(BOOL)canPromptForRating {
-  [self incrementSignificantEventCount];
-
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self incrementSignificantEventCount];
+  });
+  
   if (canPromptForRating &&
       [self ratingConditionsHaveBeenMet] &&
       [self ratingAlertIsAppropriate]) {
